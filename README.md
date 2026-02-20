@@ -110,11 +110,7 @@ Each message is JSON:
 
 ### 5. Set Up Node-RED Dashboard
 
-Import or build flows that:
-- Subscribe to `hydro/grow1/sensors/#` for live readings
-- Subscribe to `hydro/grow1/status/#` for device status
-- Publish to `hydro/grow1/control/<device>` to toggle relays
-- Query InfluxDB for historical charts
+Paste flows.json into the nodered flow chart at http:/[server-ip]:[nodered-port]
 
 #### MQTT Control Topics
 
