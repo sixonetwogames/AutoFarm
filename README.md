@@ -35,7 +35,7 @@ Mosquitto Broker
 
 All relays are controllable via MQTT commands from the Node-RED dashboard.
 
-### WiFi Provisioning (No Hardcoded Credentials)
+### WiFi Provisioning
 The ESP32 stores WiFi and MQTT server credentials in non-volatile storage (NVS) rather than in firmware. On first boot (or if the saved network is unavailable), it automatically creates a WiFi access point called **AUTOFARM** with a captive portal that:
 
 - Scans and lists available networks
@@ -48,13 +48,13 @@ Credentials can be reset remotely via MQTT or by reflashing.
 ## Hardware
 
 | Component | Pin | Notes |
-|-----------|-----|-------|
-| DHT11 | GPIO 32 | Temperature + humidity |
-| Water Level Sensor | GPIO 34 | ADC1 only (capacitive) |
-| pH Sensor | GPIO 35 | ADC1, HiLetgo module |
-| Relay — Pump | GPIO 16 | |
-| Relay — Light | GPIO 17 | |
-| Relay — Fan | GPIO 18 | |
+|-----------|-----|------------------------------------|
+| DHT11     | 32  | Temperature + humidity             |
+| H20 Level | GPIO 34 | ADC1 only (capacitive)         |
+| pH Sensor | GPIO 35 | ADC1, HiLetgo module           |
+| Pump      | GPIO 16 |                                |
+| Light     | GPIO 17 |                                |
+| Fan       | GPIO 18 |                                |
 
 > ADC1 pins (32–39) are required for analog reads since ADC2 conflicts with WiFi on the ESP32.
 
