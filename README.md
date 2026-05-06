@@ -1,4 +1,4 @@
-# 🌱 AutoFarm
+# AutoFarm
 
 A mini automated hydroponic farm powered by an ESP32 microcontroller. Monitors environmental and water conditions in real-time, controls grow equipment via relays, and streams everything to an InfluxDB + Node-RED dashboard.
 
