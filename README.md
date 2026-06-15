@@ -4,7 +4,7 @@ A mini automated hydroponic farm powered by an ESP32. It monitors temperature, h
 
 **The Raspberry Pi / server stack is completely optional.** You choose at setup:
 
-- **Local mode** — the ESP32 hosts its own live web dashboard. No server, no broker, nothing else to run. Just flash and go.
+- **Local mode** — the ESP32 hosts its own live web dashboard. Just flash and go.
 - **MQTT mode** — the ESP32 streams readings to an MQTT broker for logging and dashboards (InfluxDB + Node-RED), for multi-device setups or long-term history.
 
 You pick the mode in the WiFi setup portal — no recompiling to switch.
