@@ -4,7 +4,7 @@ A mini automated hydroponic farm powered by an ESP32. It monitors temperature, h
 
 **The Raspberry Pi / server stack is completely optional.** You choose at setup:
 
-- **Local mode** — the ESP32 hosts its own live web dashboard. Just flash and go.
+- **Local mode** — the ESP32 hosts its own live web dashboard. No server, no broker, nothing else to run. Just flash and go.
 - **MQTT mode** — the ESP32 streams readings to an MQTT broker for logging and dashboards (InfluxDB + Node-RED), for multi-device setups or long-term history.
 
 You pick the mode in the WiFi setup portal — no recompiling to switch.
@@ -97,14 +97,16 @@ Relays are **active-LOW**: the firmware (`relay.h`) initializes each pin HIGH (o
 
 ### Bill of materials
 
+**All-in-one option:** the [SunFounder ESP32 Ultimate Starter Kit](https://www.amazon.com/SunFounder-Compatiple-Beginners-Engineers-ESP32-WROOM-32E/dp/B0CLDJ2DL7) covers most of this build in one box — the ESP32-WROOM-32E board, DHT11, capacitive water-level probe, a relay module, a full resistor assortment (enough to build the pH 5:1 divider **and** the relay pull-ups), plus a breadboard and jumper wires. The only thing you need to add is the **pH kit** (module + probe), which isn't included. The à-la-carte list below is the alternative if you'd rather source parts individually.
+
 | Item | Suggested part | Notes |
 |---|---|---|
-| ESP32 WROOM-32 DevKitC, 38-pin | [HiLetgo 3-pack](https://www.amazon.com/HiLetgo-ESP-WROOM-32-Bluetooth-ESP32-DevKitC-32-Development/dp/B0CNYK7WT2) | Use WROOM, not WROVER (WROVER ties up GPIO 16/17 for PSRAM) |
-| DHT11, 3-pin module | [HiLetgo 5-pack](https://www.amazon.com/HiLetgo-Temperature-Humidity-Digital-3-3V-5V/dp/B01DKC2GQ0) | Onboard pull-up — no external DHT resistor needed |
-| Water-level probe (capacitive) | [Stemedu capacitive v2.0, 5-pack](https://www.amazon.com/Stemedu-Capacitive-Corrosion-Resistant-Electronic/dp/B0BTHL6M19) | Power at 3.3V; matches the EMPTY/FULL calibration. Choose a version with the onboard 3.3V regulator |
-| pH module + BNC probe | [Teyleten PH0-14](https://www.amazon.com/Teyleten-Robot-Acquisition-Alkalinity-Monitoring/dp/B09H1MJS4S) | 5V power; analog output via the 5:1 divider |
-| 4-channel relay, 5V active-LOW | [ELEGOO 4-channel](https://www.amazon.com/ELEGOO-Channel-Optocoupler-Compatible-Raspberry/dp/B09ZQS2JRD) | Matches firmware logic; 4th channel spare |
-| Divider + relay pull-ups (resistors) | [Aniann 1280pc 1% kit](https://www.amazon.com/Resistor-Assorted-Resistors-Assortment-Experiments/dp/B07L851T3V) | Contains 39kΩ + 10kΩ (pH divider) and 3× 10kΩ (relay pull-ups) |
+| ESP32 WROOM-32 DevKitC, 38-pin | [HiLetgo 3-pack](https://www.amazon.com/HiLetgo-ESP-WROOM-32-Bluetooth-ESP32-DevKitC-32-Development/dp/B0CNYK7WT2) | Use WROOM, not WROVER (WROVER ties up GPIO 16/17 for PSRAM). *In the SunFounder kit.* |
+| DHT11, 3-pin module | [HiLetgo 5-pack](https://www.amazon.com/HiLetgo-Temperature-Humidity-Digital-3-3V-5V/dp/B01DKC2GQ0) | Onboard pull-up — no external DHT resistor needed. *In the SunFounder kit.* |
+| Water-level probe (capacitive) | [Stemedu capacitive v2.0, 5-pack](https://www.amazon.com/Stemedu-Capacitive-Corrosion-Resistant-Electronic/dp/B0BTHL6M19) | Power at 3.3V; matches the EMPTY/FULL calibration. Choose a version with the onboard 3.3V regulator. *In the SunFounder kit.* |
+| pH module + BNC probe | [Teyleten PH0-14](https://www.amazon.com/Teyleten-Robot-Acquisition-Alkalinity-Monitoring/dp/B09H1MJS4S) | 5V power; analog output via the 5:1 divider. **Buy separately — not in the SunFounder kit.** |
+| 4-channel relay, 5V active-LOW | [ELEGOO 4-channel](https://www.amazon.com/ELEGOO-Channel-Optocoupler-Compatible-Raspberry/dp/B09ZQS2JRD) | Matches firmware logic; 4th channel spare. *A relay module is in the SunFounder kit.* |
+| Divider + relay pull-ups (resistors) | [Aniann 1280pc 1% kit](https://www.amazon.com/Resistor-Assorted-Resistors-Assortment-Experiments/dp/B07L851T3V) | Contains 39kΩ + 10kΩ (pH divider) and 3× 10kΩ (relay pull-ups). *Not needed if using the SunFounder kit — its resistor assortment covers the divider and pull-ups.* |
 | Divider (small-part alternative) | [3296W multiturn trimpot kit](https://www.amazon.com/3296W-Multiturn-Trimmer-Potentiometer-Kit/dp/B0FDK65H47) | Wire a 20kΩ trimpot as an adjustable divider, wiper → GPIO 35 |
 | Power | Any 5V ≥2A USB charger + USB cable | No separate PSU required |
 
