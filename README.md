@@ -1,49 +1,56 @@
 # AutoFarm
 
-A mini automated hydroponic farm powered by an ESP32 microcontroller. Monitors environmental and water conditions in real-time, controls grow equipment via relays, and streams everything to an InfluxDB + Node-RED dashboard.
+A mini automated hydroponic farm powered by an ESP32. It monitors temperature, humidity, water level, and pH, and controls grow equipment (pump, light, fan) via relays.
 
-![ESP32](https://img.shields.io/badge/ESP32-PlatformIO-blue) ![MQTT](https://img.shields.io/badge/MQTT-Mosquitto-purple) ![InfluxDB](https://img.shields.io/badge/InfluxDB-2.x-green) ![Node-RED](https://img.shields.io/badge/Node--RED-Dashboard-red)
+**The Raspberry Pi / server stack is completely optional.** You choose at setup:
 
-## Architecture
+- **Local mode** — the ESP32 hosts its own live web dashboard. No server, no broker, nothing else to run. Just flash and go.
+- **MQTT mode** — the ESP32 streams readings to an MQTT broker for logging and dashboards (InfluxDB + Node-RED), for multi-device setups or long-term history.
+
+You pick the mode in the WiFi setup portal — no recompiling to switch.
+
+![ESP32](https://img.shields.io/badge/ESP32-PlatformIO-blue) ![MQTT](https://img.shields.io/badge/MQTT-optional-purple) ![InfluxDB](https://img.shields.io/badge/InfluxDB-optional-green) ![Node-RED](https://img.shields.io/badge/Node--RED-optional-red)
+
+## Operating modes
+
+### Local mode (no server required)
 
 ```
-ESP32 (Sensors + Relays)
-    │
-    │  MQTT
-    ▼
-Mosquitto Broker
-    │
-    ├──► InfluxDB (time-series storage)
-    │
-    └──► Node-RED (dashboard + automation rules)
+ESP32 ──► hosts dashboard at http://<grow-id>.local/
+          (sensors read on demand, nothing leaves the device)
 ```
+
+The ESP32 joins your WiFi and serves a self-contained dashboard showing live sensor cards and relay toggle buttons. Sensors are read on demand when the page refreshes; no data is sent anywhere. This is the simplest setup and all most users need.
+
+### MQTT mode (optional server stack)
+
+```
+ESP32 ──MQTT──► Mosquitto ──► InfluxDB  (time-series storage)
+                          └─► Node-RED  (dashboard + automation)
+```
+
+Use this only if you want historical logging, automation rules, or a single dashboard across multiple grows. It requires the server stack below.
 
 ## Features
 
-### Sensors
-
 - **Temperature & Humidity** — DHT11 with calibration offsets
-- **Water Level** — Capacitive sensor mapped to 0–100%
-- **pH** — Analog pH module with voltage-based calibration
-
-### Controls
-
-- **Pump** — Water circulation
-- **Grow Light** — Lighting schedule
-- **Fan** — Air circulation / temperature control
-
-All relays are controllable via MQTT commands from the Node-RED dashboard.
+- **Water Level** — capacitive sensor mapped to 0–100%
+- **pH** — analog pH module with voltage-based calibration
+- **Relays** — pump, grow light, fan, controllable from the local dashboard *or* via MQTT
+- **On-device dashboard** — live stats + relay control, zero external dependencies
+- **WiFi provisioning** — captive portal stores WiFi/mode/server settings in flash (NVS)
 
 ### WiFi Provisioning
 
-The ESP32 stores WiFi and MQTT server credentials in non-volatile storage (NVS) rather than in firmware. On first boot (or if the saved network is unavailable), it automatically creates a WiFi access point called **AUTOFARM** with a captive portal that:
+The ESP32 stores its settings in non-volatile storage (NVS) rather than in firmware. On first boot (or if the saved network is unavailable), it creates a WiFi access point called **AUTOFARM** with a captive portal that:
 
 - Scans and lists available networks
 - Lets you select SSID + enter password
-- Lets you configure the MQTT server IP
+- Lets you choose **Data Mode**: *Host dashboard on ESP32* (local) or *Send to MQTT server*
+- For MQTT mode, lets you set the broker IP/hostname
 - Saves everything to flash and reboots
 
-Credentials can be reset remotely via MQTT or by reflashing.
+In local mode the MQTT field is hidden — it isn't needed. Settings can be reset remotely via MQTT (MQTT mode) or by reflashing.
 
 ## Hardware
 
@@ -105,13 +112,6 @@ Relays are **active-LOW**: the firmware (`relay.h`) initializes each pin HIGH (o
 
 ## Getting Started
 
-### Prerequisites
-
-- [PlatformIO](https://platformio.org/) (VS Code extension or CLI)
-- MQTT broker (e.g. [Mosquitto](https://mosquitto.org/))
-- [InfluxDB 2.x](https://www.influxdata.com/)
-- [Node-RED](https://nodered.org/) with `node-red-dashboard` and `node-red-contrib-influxdb`
-
 ### 1. Flash the ESP32
 
 ```
@@ -121,53 +121,67 @@ pio run --target upload
 pio device monitor
 ```
 
-### 2. Configure WiFi + MQTT
+Requires [PlatformIO](https://platformio.org/) (VS Code extension or CLI).
 
-On first boot, connect to the **AUTOFARM** WiFi network from your phone or laptop. The captive portal will open automatically — select your WiFi network, enter the password, and set your MQTT server IP. The device will reboot and connect.
+### 2. Provision over WiFi
 
-### 3. Set Up Mosquitto
+On first boot, connect to the **AUTOFARM** WiFi network from your phone or laptop. The captive portal opens automatically:
 
-Install and run with default settings. The ESP32 publishes to and subscribes under `hydro/grow1/`.
+1. Select your WiFi network and enter the password.
+2. Choose a **Data Mode**:
+   - **Host dashboard on ESP32** — done after this, skip to step 3.
+   - **Send to MQTT server** — enter your broker IP/hostname, then set up the server stack (below).
+3. Enter a **Grow ID** (unique device name, e.g. `grow1`).
 
+The device saves and reboots.
+
+### 3a. Local mode — open the dashboard
+
+That's it. Open **`http://<grow-id>.local/`** (e.g. `http://grow1.local/`) on any device on the same WiFi. The serial monitor also prints the raw IP as a fallback if `.local` doesn't resolve on your network.
+
+The dashboard shows live sensor cards and pump/light/fan toggle buttons. No server needed.
+
+### 3b. MQTT mode — optional server stack
+
+Only needed if you chose MQTT mode and want logging/automation.
+
+<details>
+<summary>Server setup (Mosquitto + InfluxDB + Node-RED)</summary>
+
+**Prerequisites:** an MQTT broker ([Mosquitto](https://mosquitto.org/)), [InfluxDB 2.x](https://www.influxdata.com/), and [Node-RED](https://nodered.org/) with `node-red-dashboard` and `node-red-contrib-influxdb`.
+
+**Mosquitto**
 ```
 sudo apt install mosquitto mosquitto-clients
 sudo systemctl enable mosquitto
 ```
+The ESP32 publishes to and subscribes under `hydro/<grow-id>/`.
 
-### 4. Set Up InfluxDB
-
-Create a bucket for sensor data. Use Telegraf or a Node-RED flow to subscribe to MQTT topics and write to InfluxDB:
-
+**InfluxDB** — create a bucket and write the MQTT topics to it (via Telegraf or a Node-RED flow):
 ```
-hydro/grow1/sensors/air_temp
-hydro/grow1/sensors/humidity
-hydro/grow1/sensors/water_level
-hydro/grow1/sensors/ph
+hydro/<grow-id>/sensors/air_temp
+hydro/<grow-id>/sensors/humidity
+hydro/<grow-id>/sensors/water_level
+hydro/<grow-id>/sensors/ph
 ```
-
 Each message is JSON:
-
 ```json
-{
-  "value": 72.5,
-  "unit": "°F",
-  "online": true
-}
+{ "value": 72.5, "unit": "°F", "online": true }
 ```
 
-### 5. Set Up Node-RED Dashboard
+**Node-RED** — paste `flows.json` into the flow editor at `http://<server-ip>:1880`.
 
-Paste flows.json into the nodered flow chart at http://[server-ip]:[nodered-port]
-
-#### MQTT Control Topics
+**MQTT control topics**
 
 | Topic | Payload | Action |
 |---|---|---|
-| `hydro/grow1/control/pump` | `1` / `0` | Toggle pump |
-| `hydro/grow1/control/light` | `1` / `0` | Toggle grow light |
-| `hydro/grow1/control/fan` | `1` / `0` | Toggle fan |
-| `hydro/grow1/control/probe` | any | Re-probe all sensors |
-| `hydro/grow1/control/reset_wifi` | any | Clear WiFi/MQTT creds & reboot into setup |
+| `hydro/<grow-id>/control/pump` | `1` / `0` | Toggle pump |
+| `hydro/<grow-id>/control/light` | `1` / `0` | Toggle grow light |
+| `hydro/<grow-id>/control/fan` | `1` / `0` | Toggle fan |
+| `hydro/<grow-id>/control/probe` | any | Re-probe all sensors |
+| `hydro/<grow-id>/control/reset_wifi` | any | Clear settings & reboot into setup |
+
+</details>
 
 ## Calibration
 
@@ -193,12 +207,16 @@ Calibration values are in `config.h`:
 ```
 autofarm/
 ├── src/
-│   ├── main.cpp           # Setup, loop, WiFi provisioning, captive portal
+│   ├── main.cpp           # Setup, loop, provisioning, mode routing
 │   ├── config.h           # Pins, calibration, timing, network defaults
-│   ├── sensors.h          # Sensor base classes & registry
+│   ├── credentials.h      # NVS storage + mode (local / mqtt)
+│   ├── wifi_manager.h     # STA WiFi connection
+│   ├── portal.h           # Captive setup portal (mode selector)
+│   ├── sensors.h          # Sensor registry & reading struct
 │   ├── sensor_impl.h      # DHT, water level, pH implementations
-│   ├── relay.h            # Relay controller
-│   └── mqtt_handler.h     # MQTT client wrapper
+│   ├── relay.h            # Relay controller (active-LOW)
+│   ├── local_server.h     # On-device web dashboard (local mode)
+│   └── mqtt_handler.h     # MQTT client wrapper (MQTT mode)
 └── platformio.ini
 ```
 
